@@ -1,0 +1,6 @@
+framework module Pods_EstimoteTestApp {
+  umbrella header "Pods-EstimoteTestApp-umbrella.h"
+
+  export *
+  module * { export * }
+}
