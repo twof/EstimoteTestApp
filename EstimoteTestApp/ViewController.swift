@@ -20,7 +20,7 @@ struct BeaconDetails {
 
 class ViewController: UIViewController, ESTBeaconManagerDelegate, ESTDeviceManagerDelegate, ESTDeviceConnectableDelegate, ESTBeaconConnectionDelegate {
     
-    var details = BeaconDetails(beaconConnection: nil, beaconRegion: CLBeaconRegion(proximityUUID: NSUUID(uuidString: "B9407F30-F5F8-466E-AFF9-25556B57FE6D")! as UUID, identifier: "monitored region"), selectedBeacon: ESTDeviceLocationBeacon(), major: 0, minor: 0)
+    var details = BeaconDetails(beaconConnection: nil, beaconRegion: CLBeaconRegion(proximityUUID: NSUUID(uuidString: "B9407F30-F5F8-466E-AFF9-25556B57FE6D")! as UUID, identifier: "monitored region"), selectedBeacon: nil, major: 0, minor: 0)
     
     
     let deviceManager = ESTDeviceManager()
@@ -36,7 +36,7 @@ class ViewController: UIViewController, ESTBeaconManagerDelegate, ESTDeviceManag
         self.deviceManager.delegate = self
         
         
-        //self.deviceManager.startDeviceDiscovery(with: ESTDeviceFilterLocationBeacon())
+        self.deviceManager.startDeviceDiscovery(with: ESTDeviceFilterLocationBeacon())
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -55,13 +55,15 @@ class ViewController: UIViewController, ESTBeaconManagerDelegate, ESTDeviceManag
     
     func beaconManager(_ manager: Any, didRangeBeacons beacons: [CLBeacon],
                        in region: CLBeaconRegion) {
-        if beacons.count > 0{
-            let matchingBeacons = beacons.filter({ (beacon) -> Bool in
-                beacon.proximityUUID == self.details.selectedBeacon?.peripheralIdentifier
-            })
-                
-                //{ ($0 as CLBeacon).proximityUUID == self.details.selectedBeacon?.peripheralIdentifier }
+        if beacons.count > 0 && (self.details.selectedBeacon != nil){
+            for beacon in beacons{
+                print("uuid: " + beacon.proximityUUID.uuidString)
+            }
             
+            let matchingBeacons = beacons.filter({ (beacon) -> Bool in
+                return beacon.proximityUUID == self.details.selectedBeacon?.peripheralIdentifier
+            })
+
             if matchingBeacons.count > 0{
                 let match = matchingBeacons[0]
                 self.details.beaconConnection = ESTBeaconConnection(beacon: match, delegate: self)
@@ -77,8 +79,9 @@ class ViewController: UIViewController, ESTBeaconManagerDelegate, ESTDeviceManag
     func deviceManager(_ manager: ESTDeviceManager, didDiscover devices: [ESTDevice]) {
         if devices.count > 0 && devices[0] != self.details.selectedBeacon{
             self.details.selectedBeacon = (devices[0] as! ESTDeviceLocationBeacon)
-            self.details.selectedBeacon?.delegate = self;
-            
+            self.details.selectedBeacon?.delegate = self
+            print("rssi: " + (self.details.selectedBeacon?.rssi.description)!)
+            print("perif ID: " + (self.details.selectedBeacon?.peripheralIdentifier.uuidString)!)
             self.details.selectedBeacon?.connect()
         }
     }
@@ -88,10 +91,11 @@ class ViewController: UIViewController, ESTBeaconManagerDelegate, ESTDeviceManag
     func estDeviceConnectionDidSucceed(_ device: ESTDeviceConnectable) {
         print("Connected")
         
+        self.details.selectedBeacon?.peripheralIdentifier
 
-        print("uuid: " + (self.details.selectedBeacon?.peripheralIdentifier.uuidString)!)
-        //print("major: " + (self.details.selectedBeacon?.settings?.iBeacon.minor.getValue().description)!)
-        //print("minor: " + (self.details.selectedBeacon?.settings?.iBeacon.minor.getValue().description)!)
+        print("post connect uuid: " + (self.details.selectedBeacon?.settings?.iBeacon.proximityUUID.getValue().description)!)
+        print("major: " + (self.details.selectedBeacon?.settings?.iBeacon.minor.getValue().description)!)
+        print("minor: " + (self.details.selectedBeacon?.settings?.iBeacon.minor.getValue().description)!)
         
         //            self.beaconConnection = ESTBeaconConnection(proximityUUID: devices[0].peripheralIdentifier, major: ((devices[0] as! ESTDeviceLocationBeacon).settings?.iBeacon.major.getValue())!, minor: ((devices[0] as! ESTDeviceLocationBeacon).settings?.iBeacon.minor.getValue())!, delegate: self)
     }
